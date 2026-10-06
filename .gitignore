@@ -7,3 +7,24 @@ HEART_*.tar.gz
 inst/doc
 doc
 Meta
+
+# never commit data (genotypes, phenotypes, results)
+*.bed
+*.bim
+*.fam
+*.bgen
+*.pgen
+*.pvar
+*.psam
+*.vcf
+*.vcf.gz
+*.sample
+*.rds
+*.RData
+*.rda
+*.tsv
+*.tsv.gz
+*.csv
+*.csv.gz
+*.txt.gz
+data-raw/
