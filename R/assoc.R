@@ -247,21 +247,22 @@ heart_assoc <- function(Y, G, D, X = NULL,
 # Binomial family (logit link): per-variant IRLS / Newton.
 # ---------------------------------------------------------------------------
 
-.logit_fit <- function(Z, y, wt, start = NULL, maxit = 50L, tol = 1e-10) {
+# Weighted logistic regression by Newton-Raphson; only rows with positive
+# weight enter the iterations. `mu` is returned for every row.
+.logit_fit <- function(Z, y, wt, start = NULL, maxit = 50L, tol = 1e-8) {
+  keep <- wt > 0
+  Zk <- Z[keep, , drop = FALSE]; yk <- y[keep]; wk <- wt[keep]
   beta <- if (is.null(start)) rep(0, ncol(Z)) else start
   for (it in seq_len(maxit)) {
-    eta <- drop(Z %*% beta)
-    mu <- stats::plogis(eta)
-    W <- wt * pmax(mu * (1 - mu), 1e-12)
-    U <- crossprod(Z, wt * (y - mu))
-    A <- crossprod(Z, Z * W)
-    step <- drop(.sym_inv(A) %*% U)
+    mu <- stats::plogis(drop(Zk %*% beta))
+    A <- crossprod(Zk, Zk * (wk * mu * (1 - mu)))
+    step <- drop(.sym_inv(A) %*% crossprod(Zk, wk * (yk - mu)))
     beta <- beta + step
     if (max(abs(step)) < tol) break
   }
-  mu <- stats::plogis(drop(Z %*% beta))
-  list(beta = beta, mu = mu,
-       A = crossprod(Z, Z * (wt * mu * (1 - mu))))
+  mu_k <- stats::plogis(drop(Zk %*% beta))
+  list(beta = beta, mu = stats::plogis(drop(Z %*% beta)),
+       A = crossprod(Zk, Zk * (wk * mu_k * (1 - mu_k))))
 }
 
 .assoc_binomial_one <- function(g, pre) {
@@ -310,18 +311,22 @@ heart_assoc <- function(Y, G, D, X = NULL,
   as.data.frame(out, check.names = FALSE)
 }
 
-# Newton-Raphson for sum_i Z_i {w_i (Y_i - mu_i) + v_i r_i} = 0.
-.dr_logit_fit <- function(Z, y, w, v, r, start, maxit = 50L, tol = 1e-10) {
-  beta <- start
+# Newton-Raphson for sum_i Z_i {w_i (Y_i - mu_i) + v_i r_i} = 0. The
+# augmentation term does not depend on beta and w_i = 0 for source rows, so the
+# iterations only involve target rows.
+.dr_logit_fit <- function(Z, y, w, v, r, start, maxit = 50L, tol = 1e-8) {
   aug <- crossprod(Z, v * r)
+  keep <- w > 0
+  Zk <- Z[keep, , drop = FALSE]; yk <- y[keep]; wk <- w[keep]
+  beta <- start
   for (it in seq_len(maxit)) {
-    mu <- stats::plogis(drop(Z %*% beta))
-    U <- crossprod(Z, w * (y - mu)) + aug
-    A <- crossprod(Z, Z * (w * pmax(mu * (1 - mu), 1e-12)))
-    step <- drop(.sym_inv(A) %*% U)
+    mu <- stats::plogis(drop(Zk %*% beta))
+    A <- crossprod(Zk, Zk * (wk * mu * (1 - mu)))
+    step <- drop(.sym_inv(A) %*% (crossprod(Zk, wk * (yk - mu)) + aug))
     beta <- beta + step
     if (max(abs(step)) < tol) break
   }
-  mu <- stats::plogis(drop(Z %*% beta))
-  list(beta = beta, mu = mu, A = crossprod(Z, Z * (w * mu * (1 - mu))))
+  mu_k <- stats::plogis(drop(Zk %*% beta))
+  list(beta = beta, mu = stats::plogis(drop(Z %*% beta)),
+       A = crossprod(Zk, Zk * (wk * mu_k * (1 - mu_k))))
 }
