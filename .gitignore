@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rcheck/
+HEART_*.tar.gz
+inst/doc
+doc
+Meta

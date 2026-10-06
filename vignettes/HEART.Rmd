@@ -1,0 +1,74 @@
+---
+title: "Introduction to HEART"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to HEART}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+HEART tests the association between each variant and a phenotype **in a target
+population**. It borrows information from a larger source population whose
+genetic effects may differ. This vignette walks through the two steps of the
+method on simulated data.
+
+```{r}
+library(HEART)
+sim <- heart_simulate(n_tar = 3000, n_src = 20000, J = 3000, seed = 2026)
+table(sim$truth$config)
+```
+
+The configurations are `00` (null in both populations), `01` (source-specific
+signal, so the target null holds), `10` (target-specific signal) and `11` (shared
+signal).
+
+## Step 1: target-only, auxiliary and decorrelated estimators
+
+```{r}
+fit <- heart_assoc(sim$Y, sim$G, sim$D, sim$X, aux = c("pooled", "source"))
+head(fit[, c("snp", "beta_tar", "p_tar", "beta_pooled", "rho_pooled",
+             "beta_de_pooled", "p_de_pooled")])
+```
+
+The pooled estimator is not valid for the target null. Its p-values are small
+for the source-specific variants (`01`), whose target effect is zero:
+
+```{r}
+src_only <- sim$truth$config == "01"
+c(pooled = mean(fit$p_pooled[src_only] < 1e-4),
+  target = mean(fit$p_tar[src_only] < 1e-4))
+```
+
+## Step 2: HEART test
+
+```{r}
+res <- heart_test(fit$p_tar, fit$p_de_pooled, snp = fit$snp, alpha = 0.05)
+res
+```
+
+Compare the discoveries with the truth:
+
+```{r}
+signal <- sim$truth$beta_tar != 0
+bh <- p.adjust(fit$p_tar, "BH") <= 0.05
+rbind(
+  HEART = c(discoveries = sum(res$results$reject_fdr),
+            FDP = mean(!signal[res$results$reject_fdr]),
+            power = mean(res$results$reject_fdr[signal])),
+  `Target-only BH` = c(sum(bh), mean(!signal[bh]), mean(bh[signal]))
+)
+```
+
+## Inspecting the null distribution
+
+`heart_null_cdf()` returns the components of the estimated composite null
+distribution: F<sub>00</sub>, Q̂, F̂<sub>01</sub>, N̂ and F̂<sub>0</sub>.
+
+```{r}
+nc <- res$null_cdf
+head(nc)
+```

@@ -1,0 +1,38 @@
+Package: HEART
+Type: Package
+Title: Heterogeneity-Aware Empowerment via Adaptive Robust Transfer
+Version: 0.1.0
+Authors@R: c(
+    person("Haoyu", "Yang", email = "haoyuyang@hsph.harvard.edu",
+           role = c("aut", "cre")),
+    person("Ruoyu", "Wang", role = "aut"),
+    person("Xihong", "Lin", email = "xlin@hsph.harvard.edu", role = "aut")
+    )
+Description: Implements HEART, a procedure for target-population association
+    testing (e.g. GWAS in an under-represented ancestry) that borrows strength
+    from a larger, possibly heterogeneous source population. For each variant a
+    target-only estimator and an auxiliary estimator (pooled, doubly robust or
+    source-only) are computed, the auxiliary estimator is decorrelated from the
+    target-only one through their joint sandwich covariance, and the resulting
+    pair of p-values is combined through a four-group mixture model into a
+    likelihood-ratio type statistic. The composite null distribution of the
+    statistic is estimated from the data, giving false discovery rate and
+    family-wise error rate control that is robust to source-specific signals and
+    to violations of transportability.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.0.0)
+Imports:
+    stats,
+    utils
+Suggests:
+    BEDMatrix,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+URL: https://github.com/haoyu-yang001/HEART
+BugReports: https://github.com/haoyu-yang001/HEART/issues
