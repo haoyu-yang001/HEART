@@ -12,7 +12,7 @@ heart_null_cdf(log_t, p_de, par, exact = FALSE, n_exact = 5000L, n_grid = 500L)
 \item{p_de}{All decorrelated p-values (used for \eqn{\hat Q}).}
 
 \item{par}{Parameter list as in \code{\link[=heart_statistic]{heart_statistic()}}, also containing
-\code{pi10}.}
+\code{pi11} (or \code{pi10}, from which \eqn{\pi_{11} = 1 - \pi_{00} - \pi_{01} - \pi_{10}}).}
 
 \item{exact}{If \code{FALSE}, \eqn{F_{00}} is computed exactly at the \code{n_exact}
 smallest values and interpolated (log-log) on an \code{n_grid} grid elsewhere.}
@@ -27,8 +27,8 @@ sorted by \code{log_t}.
 Evaluates, at the statistic values \code{t}, the global-null CDF
 \eqn{F_{00}(t) = \int_0^1 G_t(q)dq}, its empirical counterpart
 \eqn{\hat Q(t) = J^{-1}\sum_j G_t(p_{de,j})}, the reconstructed
-\eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{\cdot0}F_{00}(t)\}/(1-\hat\pi_{\cdot0})}
-(truncated to [0, 1] and made nondecreasing), the null numerator
+\eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{00}F_{00}(t)\}/(\hat\pi_{01}+\hat\pi_{11})}
+(truncated to [0, 1]; set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
 \eqn{\hat N(t) = \hat\pi_{00}F_{00}(t) + \hat\pi_{01}\hat F_{01}(t)} and the
 composite null CDF \eqn{\hat F_0(t) = \hat N(t) / (\hat\pi_{00} + \hat\pi_{01})},
 where \eqn{G_t(q) = \min\{1, (t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\}}.

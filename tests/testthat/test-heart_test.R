@@ -95,3 +95,17 @@ test_that("end-to-end wrapper runs", {
   expect_equal(nrow(res$results), 300)
   expect_equal(res$aux, "pooled")
 })
+
+test_that("F01 follows (Q - pi00 F00) / (pi01 + pi11)", {
+  par <- make_par()
+  set.seed(4)
+  pd <- c(stats::runif(900), stats::rbeta(100, 0.1, 1))
+  lt <- log(c(1e-3, 0.02, 0.2))
+  nc <- heart_null_cdf(lt, pd, par, exact = TRUE)
+  ref <- pmin(pmax((nc$Q - par$pi00 * nc$F00) / (par$pi01 + par$pi11), 0), 1)
+  expect_equal(nc$F01, ref)
+  expect_equal(nc$N, par$pi00 * nc$F00 + par$pi01 * nc$F01)
+  # pi11 is derived from pi10 when not supplied
+  par2 <- par[setdiff(names(par), "pi11")]
+  expect_equal(heart_null_cdf(lt, pd, par2, exact = TRUE), nc)
+})

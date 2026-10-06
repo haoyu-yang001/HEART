@@ -253,8 +253,8 @@ heart_statistic <- function(p_tar, p_de, par, log = FALSE) {
 #' Evaluates, at the statistic values `t`, the global-null CDF
 #' \eqn{F_{00}(t) = \int_0^1 G_t(q)dq}, its empirical counterpart
 #' \eqn{\hat Q(t) = J^{-1}\sum_j G_t(p_{de,j})}, the reconstructed
-#' \eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{\cdot0}F_{00}(t)\}/(1-\hat\pi_{\cdot0})}
-#' (truncated to \[0, 1\] and made nondecreasing), the null numerator
+#' \eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{00}F_{00}(t)\}/(\hat\pi_{01}+\hat\pi_{11})}
+#' (truncated to \[0, 1\]; set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
 #' \eqn{\hat N(t) = \hat\pi_{00}F_{00}(t) + \hat\pi_{01}\hat F_{01}(t)} and the
 #' composite null CDF \eqn{\hat F_0(t) = \hat N(t) / (\hat\pi_{00} + \hat\pi_{01})},
 #' where \eqn{G_t(q) = \min\{1, (t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\}}.
@@ -262,7 +262,7 @@ heart_statistic <- function(p_tar, p_de, par, log = FALSE) {
 #' @param log_t Values of \eqn{\log t}.
 #' @param p_de All decorrelated p-values (used for \eqn{\hat Q}).
 #' @param par Parameter list as in [heart_statistic()], also containing
-#'   `pi10`.
+#'   `pi11` (or `pi10`, from which \eqn{\pi_{11} = 1 - \pi_{00} - \pi_{01} - \pi_{10}}).
 #' @param exact If `FALSE`, \eqn{F_{00}} is computed exactly at the `n_exact`
 #'   smallest values and interpolated (log-log) on an `n_grid` grid elsewhere.
 #' @param n_exact,n_grid See `exact`.
@@ -276,13 +276,9 @@ heart_null_cdf <- function(log_t, p_de, par, exact = FALSE,
   lt <- sort(unique(log_t))
   F00 <- .F00_vec(lt, cst, exact = exact, n_exact = n_exact, n_grid = n_grid)
   Q <- .Q_hat(lt, p_de, cst)
-  pi_d0 <- min(1, par$pi00 + par$pi10)
-  if (pi_d0 >= 1) {
-    F01 <- rep(1, length(lt))
-  } else {
-    F01 <- (Q - pi_d0 * F00) / (1 - pi_d0)
-    F01 <- cummax(pmin(pmax(F01, 0), 1))
-  }
+  pi11 <- if (!is.null(par$pi11)) par$pi11 else max(0, 1 - par$pi00 - par$pi01 - par$pi10)
+  den <- par$pi01 + pi11
+  F01 <- if (den <= 0) rep(0, length(lt)) else pmin(pmax((Q - par$pi00 * F00) / den, 0), 1)
   N <- par$pi00 * F00 + par$pi01 * F01
   F0 <- pmin(1, N / (par$pi00 + par$pi01))
   data.frame(log_t = lt, F00 = F00, Q = Q, F01 = F01, N = N, F0 = F0)
@@ -316,7 +312,8 @@ heart_null_cdf <- function(log_t, p_de, par, exact = FALSE,
 #' @param alpha Nominal FDR / FWER level used for the `reject_*` columns.
 #' @param snp Optional variant identifiers.
 #' @param par Optional list of model parameters (`pi00`, `pi01`, `pi10`,
-#'   `pi11`, `alpha1`, `alpha2`, `C1`, `C2`) to bypass estimation.
+#'   `alpha1`, `alpha2`, `C1`, `C2`, and optionally `pi11`) to bypass
+#'   estimation.
 #' @param tail_k,pi0_cap,alpha_bounds,C_bounds Passed to
 #'   [heart_tail_estimate()].
 #' @param lambdas Passed to [heart_pi_estimate()].
@@ -367,6 +364,7 @@ heart_test <- function(p_tar, p_de, alpha = 0.05, snp = NULL, par = NULL,
     if (!all(need %in% names(par))) {
       stop("`par` must contain: ", paste(need, collapse = ", "), call. = FALSE)
     }
+    if (is.null(par$pi11)) par$pi11 <- max(0, 1 - par$pi00 - par$pi01 - par$pi10)
   }
 
   log_T <- heart_statistic(pt, pd, par, log = TRUE)

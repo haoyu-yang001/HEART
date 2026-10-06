@@ -29,7 +29,8 @@ heart_test(
 \item{snp}{Optional variant identifiers.}
 
 \item{par}{Optional list of model parameters (\code{pi00}, \code{pi01}, \code{pi10},
-\code{pi11}, \code{alpha1}, \code{alpha2}, \code{C1}, \code{C2}) to bypass estimation.}
+\code{alpha1}, \code{alpha2}, \code{C1}, \code{C2}, and optionally \code{pi11}) to bypass
+estimation.}
 
 \item{tail_k, pi0_cap, alpha_bounds, C_bounds}{Passed to
 \code{\link[=heart_tail_estimate]{heart_tail_estimate()}}.}
