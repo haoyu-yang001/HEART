@@ -162,7 +162,9 @@ estimator and the projection coefficient.</p></dd>
 <dd><p>Decorrelated estimate.</p></dd>
 
 
-</dl><p>Variants that are monomorphic in the target sample get <code>NA</code>.
+</dl><p>Variants that are monomorphic in the target sample get <code>NA</code>; with
+<code>family = "binomial"</code>, so do variants whose logistic fits fail to converge
+(e.g. complete separation when the variant is very rare in the target).
 The attribute <code>"aux"</code> stores the auxiliary estimators that were computed.</p>
     </div>
     <div class="section level2">

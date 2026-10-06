@@ -116,8 +116,11 @@ A data.frame with one row per variant and columns
 
   Decorrelated estimate.
 
-Variants that are monomorphic in the target sample get `NA`. The
-attribute `"aux"` stores the auxiliary estimators that were computed.
+Variants that are monomorphic in the target sample get `NA`; with
+`family = "binomial"`, so do variants whose logistic fits fail to
+converge (e.g. complete separation when the variant is very rare in the
+target). The attribute `"aux"` stores the auxiliary estimators that were
+computed.
 
 ## Details
 
