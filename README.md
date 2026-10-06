@@ -1,5 +1,10 @@
 # HEART
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/haoyu-yang001/HEART/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/haoyu-yang001/HEART/actions/workflows/R-CMD-check.yaml)
+[![pkgdown](https://github.com/haoyu-yang001/HEART/actions/workflows/pkgdown.yaml/badge.svg)](https://haoyu-yang001.github.io/HEART/)
+<!-- badges: end -->
+
 **H**eterogeneity-aware **E**mpowerment via **A**daptive **R**obust **T**ransfer for target-population inference.
 
 HEART tests variant–trait associations in a small target population (for example, an
@@ -14,6 +19,8 @@ powerful than a target-only analysis.
 # install.packages("remotes")
 remotes::install_github("haoyu-yang001/HEART", build_vignettes = TRUE)
 ```
+
+Documentation: <https://haoyu-yang001.github.io/HEART/>
 
 ## Method in brief
 

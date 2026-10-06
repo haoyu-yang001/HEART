@@ -1,0 +1,31 @@
+url: https://haoyu-yang001.github.io/HEART/
+template:
+  bootstrap: 5
+
+reference:
+  - title: End-to-end analysis
+    contents:
+      - heart
+  - title: "Step 1: estimation and decorrelation"
+    contents:
+      - heart_assoc
+      - heart_density_ratio
+      - heart_meta
+  - title: "Step 2: adaptive transfer via null decomposition"
+    contents:
+      - heart_test
+      - heart_pi_estimate
+      - heart_tail_estimate
+      - heart_statistic
+      - heart_null_cdf
+  - title: Simulation
+    contents:
+      - heart_simulate
+  - title: Package
+    contents:
+      - HEART-package
+
+articles:
+  - title: Get started
+    contents:
+      - HEART

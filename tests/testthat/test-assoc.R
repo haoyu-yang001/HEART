@@ -61,12 +61,13 @@ test_that("block size does not change results and monomorphic variants give NA",
   expect_false(anyNA(a[-3, -1]))
 })
 
-test_that("missing genotypes are mean-imputed", {
+test_that("missing genotypes are mean-imputed within each population", {
   sim <- heart_simulate(n_tar = 200, n_src = 600, J = 2, seed = 2)
   G <- sim$G
-  G[c(1, 500), 1] <- NA
+  G[c(1, 500), 1] <- NA                     # row 1 is target, row 500 is source
   Gi <- G
-  Gi[c(1, 500), 1] <- mean(G[, 1], na.rm = TRUE)
+  Gi[1, 1] <- mean(G[sim$D == 1, 1], na.rm = TRUE)
+  Gi[500, 1] <- mean(G[sim$D == 0, 1], na.rm = TRUE)
   expect_equal(heart_assoc(sim$Y, G, sim$D, sim$X), heart_assoc(sim$Y, Gi, sim$D, sim$X))
 })
 

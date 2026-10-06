@@ -22,7 +22,8 @@ heart_assoc(
 
 \item{G}{Genotype matrix (n x J), a numeric vector (one variant), or any
 object supporting \code{G[, j, drop = FALSE]} and \code{ncol()} such as a
-\code{BEDMatrix}. Missing genotypes are mean-imputed within each variant.}
+\code{BEDMatrix}. Missing genotypes are mean-imputed within each variant and
+each population.}
 
 \item{D}{Population indicator of length n: 1 = target, 0 = source.}
 

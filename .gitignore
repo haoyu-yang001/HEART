@@ -28,3 +28,4 @@ Meta
 *.csv.gz
 *.txt.gz
 data-raw/
+docs

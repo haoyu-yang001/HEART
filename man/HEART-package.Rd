@@ -29,6 +29,7 @@ distribution, providing FDR and FWER control.
 Useful links:
 \itemize{
   \item \url{https://github.com/haoyu-yang001/HEART}
+  \item \url{https://haoyu-yang001.github.io/HEART/}
   \item Report bugs at \url{https://github.com/haoyu-yang001/HEART/issues}
 }
 

@@ -33,7 +33,8 @@
 #' @param Y Numeric phenotype vector of length n (0/1 for `family = "binomial"`).
 #' @param G Genotype matrix (n x J), a numeric vector (one variant), or any
 #'   object supporting `G[, j, drop = FALSE]` and `ncol()` such as a
-#'   `BEDMatrix`. Missing genotypes are mean-imputed within each variant.
+#'   `BEDMatrix`. Missing genotypes are mean-imputed within each variant and
+#'   each population.
 #' @param D Population indicator of length n: 1 = target, 0 = source.
 #' @param X Optional covariates to adjust for (matrix or data.frame, n rows);
 #'   an intercept is always added. For multi-ancestry data include genetic
@@ -123,14 +124,14 @@ heart_assoc <- function(Y, G, D, X = NULL,
     res <- vector("list", length(starts))
     for (k in seq_along(starts)) {
       idx <- starts[k]:min(J, starts[k] + block_size - 1L)
-      Gb <- .impute_block(G[, idx, drop = FALSE])
+      Gb <- .impute_block(G[, idx, drop = FALSE], D)
       res[[k]] <- .assoc_gaussian_block(Gb, pre)
       if (verbose) message(sprintf("variants %d-%d of %d done", idx[1], max(idx), J))
     }
   } else {
     res <- vector("list", J)
     for (j in seq_len(J)) {
-      g <- .impute_block(G[, j, drop = FALSE])[, 1L]
+      g <- .impute_block(G[, j, drop = FALSE], D)[, 1L]
       res[[j]] <- .assoc_binomial_one(g, pre)
       if (verbose && j %% 100L == 0L) message(sprintf("variant %d of %d done", j, J))
     }
