@@ -1,0 +1,184 @@
+# HEART
+
+**H**eterogeneity-aware **E**mpowerment via **A**daptive **R**obust
+**T**ransfer for target-population inference.
+
+HEART tests variant–trait associations in a small target population (for
+example, an under-represented ancestry in a biobank) and borrows
+strength from a larger source population. It does not assume that
+genetic effects are shared between the two populations. Source-specific
+signals do not inflate the error rate, and HEART is asymptotically no
+less powerful than a target-only analysis.
+
+## Installation
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("haoyu-yang001/HEART", build_vignettes = TRUE)
+```
+
+Documentation: <https://haoyu-yang001.github.io/HEART/>
+
+## Method in brief
+
+For each variant *j*:
+
+1.  **Estimation and decorrelation**
+    ([`heart_assoc()`](https://haoyu-yang001.github.io/HEART/reference/heart_assoc.md)).
+    HEART computes the target-only estimator β̂^(tar) and an auxiliary
+    estimator β̂^(aux). The auxiliary estimator is pooled, doubly robust
+    (DR, using surrogate-based synthetic outcomes), or source-only. It
+    is then decorrelated from the target-only estimator using their
+    joint sandwich covariance:
+
+    β̂^(de) = β̂^(aux) − ρ̂ β̂^(tar), with ρ̂ = Ĉov(β̂^(aux), β̂^(tar)) /
+    V̂ar(β̂^(tar)).
+
+    This step gives asymptotically independent p-values (p_(tar),
+    p_(de)).
+
+2.  **Adaptive transfer via null decomposition**
+    ([`heart_test()`](https://haoyu-yang001.github.io/HEART/reference/heart_test.md)).
+    The target null H₀: β^(tar) = 0 is split into H₀₀ ∪ H₀₁. A
+    four-group mixture model on (p_(tar), p_(de)) gives the HEART
+    statistic
+
+    T = π̂₀₀/(Ĉ₁Ĉ₂α̂₁α̂₂) · p_(tar)^(1−α̂₁) p_(de)^(1−α̂₂) + π̂₀₁/(Ĉ₁α̂₁) ·
+    p_(tar)^(1−α̂₁).
+
+    HEART estimates the composite null distribution of T from the data.
+    This gives per-variant HEART p-values, FDR q-values and
+    FWER-adjusted p-values.
+
+## Quick start
+
+``` r
+
+library(HEART)
+sim <- heart_simulate(n_tar = 2000, n_src = 20000, J = 2000, seed = 1)
+
+res <- heart(Y = sim$Y, G = sim$G, D = sim$D, X = sim$X, aux = "pooled", alpha = 0.05)
+res                       # summary of estimated parameters and discoveries
+head(res$results)         # p_tar, p_de, log_T, p_heart, q_heart, padj_fwer, reject_*
+```
+
+## Genome-wide analysis in chunks
+
+[`heart_test()`](https://haoyu-yang001.github.io/HEART/reference/heart_test.md)
+must see **all** variants, because the four-group parameters are
+estimated genome-wide. Step 1 can be split across jobs:
+
+``` r
+
+library(BEDMatrix)
+G <- BEDMatrix("chr22.bed", simple_names = TRUE)        # rows must align with Y, D, X
+idx <- match(sample_ids, rownames(G))
+
+# --- one array job: a chunk of variants ---
+fit_chunk <- heart_assoc(Y, G[idx, chunk_cols], D, X, aux = "pooled")
+saveRDS(fit_chunk, sprintf("assoc_chunk%03d.rds", chunk_id))
+
+# --- after all jobs finish ---
+fit <- do.call(rbind, lapply(list.files(pattern = "^assoc_chunk"), readRDS))
+res <- heart_test(fit$p_tar, fit$p_de_pooled, snp = fit$snp, alpha = 0.05)
+```
+
+For the Gaussian family the per-variant cost is linear in the number of
+covariates. The computation uses the Frisch–Waugh–Lovell representation
+of the sandwich (co)variances and is vectorised over blocks of variants.
+
+## Doubly robust auxiliary estimator with surrogates
+
+``` r
+
+# 1. Train a prediction model for Y from surrogates S on a held-out split,
+#    then predict Y_hat on the analysis sample (e.g. ranger::ranger).
+# 2. Density ratio c_i = P(D = 1 | S) / P(D = 1):
+c_i <- heart_density_ratio(D, W = S)
+# 3. Use aux = "dr":
+fit <- heart_assoc(Y, G, D, X, aux = "dr", Y_hat = Y_hat, c_i = c_i)
+res <- heart_test(fit$p_tar, fit$p_de_dr)
+```
+
+## Summary statistics only
+
+When the target and source studies are independent,
+[`heart_meta()`](https://haoyu-yang001.github.io/HEART/reference/heart_meta.md)
+builds the decorrelated inverse-variance meta-analytic estimator from
+(β̂, SE) of each study:
+
+``` r
+
+m   <- heart_meta(beta_tar, se_tar, beta_src, se_src, snp = snp_ids)
+res <- heart_test(m$p_tar, m$p_de_meta, snp = m$snp)
+```
+
+## Main functions
+
+| Function | Purpose |
+|----|----|
+| [`heart()`](https://haoyu-yang001.github.io/HEART/reference/heart.md) | End-to-end analysis (Step 1 + Step 2) |
+| [`heart_assoc()`](https://haoyu-yang001.github.io/HEART/reference/heart_assoc.md) | Target-only, auxiliary (`pooled` / `dr` / `source`) and decorrelated estimators; Gaussian or binomial |
+| [`heart_density_ratio()`](https://haoyu-yang001.github.io/HEART/reference/heart_density_ratio.md) | Density ratio for the DR estimator |
+| [`heart_meta()`](https://haoyu-yang001.github.io/HEART/reference/heart_meta.md) | Decorrelated meta-analysis from summary statistics |
+| [`heart_test()`](https://haoyu-yang001.github.io/HEART/reference/heart_test.md) | HEART statistic, composite null distribution, FDR / FWER control |
+| [`heart_pi_estimate()`](https://haoyu-yang001.github.io/HEART/reference/heart_pi_estimate.md), [`heart_tail_estimate()`](https://haoyu-yang001.github.io/HEART/reference/heart_tail_estimate.md) | Four-group proportions and tail parameters |
+| [`heart_statistic()`](https://haoyu-yang001.github.io/HEART/reference/heart_statistic.md), [`heart_null_cdf()`](https://haoyu-yang001.github.io/HEART/reference/heart_null_cdf.md) | Statistic and null CDF (F₀₀, Q̂, F̂₀₁, N̂, F̂₀) |
+| [`heart_simulate()`](https://haoyu-yang001.github.io/HEART/reference/heart_simulate.md) | Toy data under the four-group model |
+
+## Citation
+
+Yang H, Wang R, Lin X. *Heterogeneity-aware Empowerment via Adaptive
+Robust Transfer for target-population inference.* (manuscript)
+
+## License
+
+MIT
+
+# Package index
+
+## End-to-end analysis
+
+- [`heart()`](https://haoyu-yang001.github.io/HEART/reference/heart.md)
+  : HEART: end-to-end analysis from individual-level data
+
+## Step 1: estimation and decorrelation
+
+- [`heart_assoc()`](https://haoyu-yang001.github.io/HEART/reference/heart_assoc.md)
+  : Per-variant target-only, auxiliary and decorrelated estimators
+- [`heart_density_ratio()`](https://haoyu-yang001.github.io/HEART/reference/heart_density_ratio.md)
+  : Density ratio between the target and the pooled population
+- [`heart_meta()`](https://haoyu-yang001.github.io/HEART/reference/heart_meta.md)
+  : Decorrelated inverse-variance meta-analysis from summary statistics
+
+## Step 2: adaptive transfer via null decomposition
+
+- [`heart_test()`](https://haoyu-yang001.github.io/HEART/reference/heart_test.md)
+  : HEART test: adaptive transfer via null decomposition
+- [`heart_pi_estimate()`](https://haoyu-yang001.github.io/HEART/reference/heart_pi_estimate.md)
+  : Estimate the four-group proportions from a pair of p-value sequences
+- [`heart_tail_estimate()`](https://haoyu-yang001.github.io/HEART/reference/heart_tail_estimate.md)
+  : Estimate the left-tail parameters of the alternative p-value density
+- [`heart_statistic()`](https://haoyu-yang001.github.io/HEART/reference/heart_statistic.md)
+  : HEART test statistic
+- [`heart_null_cdf()`](https://haoyu-yang001.github.io/HEART/reference/heart_null_cdf.md)
+  : Composite null distribution of the HEART statistic
+
+## Simulation
+
+- [`heart_simulate()`](https://haoyu-yang001.github.io/HEART/reference/heart_simulate.md)
+  : Simulate target / source data under the four-group model
+
+## Package
+
+- [`HEART`](https://haoyu-yang001.github.io/HEART/reference/HEART-package.md)
+  [`HEART-package`](https://haoyu-yang001.github.io/HEART/reference/HEART-package.md)
+  : HEART: Heterogeneity-aware Empowerment via Adaptive Robust Transfer
+
+# Articles
+
+### Get started
+
+- [Introduction to
+  HEART](https://haoyu-yang001.github.io/HEART/articles/HEART.md):
