@@ -94,3 +94,17 @@ test_that("input validation", {
   expect_error(heart_assoc(sim$Y, sim$G, sim$D, sim$X, aux = "dr"), "Y_hat")
   expect_error(heart_assoc(sim$Y, sim$G, sim$D, cbind(sim$X, sim$X[, 1])), "rank deficient")
 })
+
+test_that("binomial: complete separation gives NA instead of an error", {
+  sim <- heart_simulate(n_tar = 300, n_src = 1000, J = 2, seed = 4)
+  set.seed(2)
+  yb <- stats::rbinom(length(sim$Y), 1, 0.3)
+  G <- sim$G
+  G[, 2] <- 0
+  carriers <- which(sim$D == 1 & yb == 1)[1:2]   # two target carriers, both cases
+  G[carriers, 2] <- 1
+  G[which(sim$D == 0)[1:50], 2] <- 1
+  fit <- heart_assoc(yb, G, sim$D, sim$X, family = "binomial")
+  expect_false(is.na(fit$p_tar[1]))
+  expect_true(is.na(fit$p_tar[2]))
+})

@@ -64,7 +64,9 @@ and two-sided p-value.}
 estimator and the projection coefficient.}
 \item{\verb{beta_de_<aux>}, \verb{se_de_<aux>}, \verb{p_de_<aux>}}{Decorrelated estimate.}
 }
-Variants that are monomorphic in the target sample get \code{NA}.
+Variants that are monomorphic in the target sample get \code{NA}; with
+\code{family = "binomial"}, so do variants whose logistic fits fail to converge
+(e.g. complete separation when the variant is very rare in the target).
 The attribute \code{"aux"} stores the auxiliary estimators that were computed.
 }
 \description{

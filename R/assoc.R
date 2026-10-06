@@ -64,7 +64,9 @@
 #'       estimator and the projection coefficient.}
 #'     \item{`beta_de_<aux>`, `se_de_<aux>`, `p_de_<aux>`}{Decorrelated estimate.}
 #'   }
-#'   Variants that are monomorphic in the target sample get `NA`.
+#'   Variants that are monomorphic in the target sample get `NA`; with
+#'   `family = "binomial"`, so do variants whose logistic fits fail to converge
+#'   (e.g. complete separation when the variant is very rare in the target).
 #'   The attribute `"aux"` stores the auxiliary estimators that were computed.
 #'
 #' @seealso [heart_test()], [heart()], [heart_density_ratio()]
@@ -258,26 +260,33 @@ heart_assoc <- function(Y, G, D, X = NULL,
     A <- crossprod(Zk, Zk * (wk * mu * (1 - mu)))
     step <- drop(.sym_inv(A) %*% crossprod(Zk, wk * (yk - mu)))
     beta <- beta + step
+    if (!all(is.finite(beta))) stop("non-finite estimates", call. = FALSE)
     if (max(abs(step)) < tol) break
   }
+  if (max(abs(step)) >= tol) stop("Newton-Raphson did not converge", call. = FALSE)
   mu_k <- stats::plogis(drop(Zk %*% beta))
   list(beta = beta, mu = stats::plogis(drop(Z %*% beta)),
        A = crossprod(Zk, Zk * (wk * mu_k * (1 - mu_k))))
 }
 
 .assoc_binomial_one <- function(g, pre) {
+  tryCatch(.assoc_binomial_fit(g, pre), error = function(e) .na_row(pre$aux))
+}
+
+.na_row <- function(aux) {
+  cols <- c("beta_tar", "se_tar", "p_tar")
+  for (a in aux) {
+    cols <- c(cols, paste0(c("beta_", "se_", "p_", "cov_", "rho_"), a),
+              paste0(c("beta_de_", "se_de_", "p_de_"), a))
+  }
+  as.data.frame(as.list(stats::setNames(rep(NA_real_, length(cols)), cols)),
+                check.names = FALSE)
+}
+
+.assoc_binomial_fit <- function(g, pre) {
   Y <- pre$Y; D <- pre$D
   Z <- cbind(pre$X1[, 1L, drop = FALSE], G = g, pre$X1[, -1L, drop = FALSE])
-  na_row <- function() {
-    cols <- c("beta_tar", "se_tar", "p_tar")
-    for (a in pre$aux) {
-      cols <- c(cols, paste0(c("beta_", "se_", "p_", "cov_", "rho_"), a),
-                paste0(c("beta_de_", "se_de_", "p_de_"), a))
-    }
-    as.data.frame(as.list(stats::setNames(rep(NA_real_, length(cols)), cols)),
-                  check.names = FALSE)
-  }
-  if (stats::var(g[D == 1]) < 1e-12) return(na_row())
+  if (stats::var(g[D == 1]) < 1e-12) return(.na_row(pre$aux))
 
   # target-only
   ft <- .logit_fit(Z, Y, D)
@@ -294,7 +303,7 @@ heart_assoc <- function(Y, G, D, X = NULL,
       cA <- sum(IFA * IFT)
     } else if (a == "source") {
       D0 <- 1 - D
-      if (stats::var(g[D0 == 1]) < 1e-12) return(na_row())
+      if (stats::var(g[D0 == 1]) < 1e-12) return(.na_row(pre$aux))
       fa <- .logit_fit(Z, Y, D0, start = ft$beta)
       IFA <- drop(Z %*% .sym_inv(fa$A)[, 2L]) * D0 * (Y - fa$mu)
       cA <- 0
@@ -324,8 +333,10 @@ heart_assoc <- function(Y, G, D, X = NULL,
     A <- crossprod(Zk, Zk * (wk * mu * (1 - mu)))
     step <- drop(.sym_inv(A) %*% (crossprod(Zk, wk * (yk - mu)) + aug))
     beta <- beta + step
+    if (!all(is.finite(beta))) stop("non-finite estimates", call. = FALSE)
     if (max(abs(step)) < tol) break
   }
+  if (max(abs(step)) >= tol) stop("Newton-Raphson did not converge", call. = FALSE)
   mu_k <- stats::plogis(drop(Zk %*% beta))
   list(beta = beta, mu = stats::plogis(drop(Z %*% beta)),
        A = crossprod(Zk, Zk * (wk * mu_k * (1 - mu_k))))
