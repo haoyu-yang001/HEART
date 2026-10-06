@@ -76,6 +76,7 @@ is the input of <code><a href="heart_test.html">heart_test()</a></code>.</p>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gaussian"</span>, <span class="st">"binomial"</span><span class="op">)</span>,</span>
 <span>  Y_hat <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  c_i <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  impute <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"zero"</span>, <span class="st">"mean"</span><span class="op">)</span>,</span>
 <span>  block_size <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -92,8 +93,7 @@ is the input of <code><a href="heart_test.html">heart_test()</a></code>.</p>
 <dt id="arg-g">G<a class="anchor" aria-label="anchor" href="#arg-g"></a></dt>
 <dd><p>Genotype matrix (n x J), a numeric vector (one variant), or any
 object supporting <code>G[, j, drop = FALSE]</code> and <code><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol()</a></code> such as a
-<code>BEDMatrix</code>. Missing genotypes are mean-imputed within each variant and
-each population.</p></dd>
+<code>BEDMatrix</code>. Missing genotypes are filled according to <code>impute</code>.</p></dd>
 
 
 <dt id="arg-d">D<a class="anchor" aria-label="anchor" href="#arg-d"></a></dt>
@@ -125,6 +125,12 @@ used here (e.g. a separate split), using surrogates only.</p></dd>
 <dt id="arg-c-i">c_i<a class="anchor" aria-label="anchor" href="#arg-c-i"></a></dt>
 <dd><p>Density ratio \(c_i = P(D=1 | S_i, Z_i) / P(D=1)\) for every
 individual, required for <code>aux = "dr"</code>; see <code><a href="heart_density_ratio.html">heart_density_ratio()</a></code>.</p></dd>
+
+
+<dt id="arg-impute">impute<a class="anchor" aria-label="anchor" href="#arg-impute"></a></dt>
+<dd><p>How to fill missing genotypes: <code>"zero"</code> (set to 0, as in the
+original HEART analysis code) or <code>"mean"</code> (variant mean within each
+population).</p></dd>
 
 
 <dt id="arg-block-size">block_size<a class="anchor" aria-label="anchor" href="#arg-block-size"></a></dt>

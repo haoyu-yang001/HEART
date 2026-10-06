@@ -24,6 +24,7 @@ heart_assoc(
   family = c("gaussian", "binomial"),
   Y_hat = NULL,
   c_i = NULL,
+  impute = c("zero", "mean"),
   block_size = NULL,
   verbose = FALSE
 )
@@ -40,8 +41,7 @@ heart_assoc(
   Genotype matrix (n x J), a numeric vector (one variant), or any object
   supporting `G[, j, drop = FALSE]` and
   [`ncol()`](https://rdrr.io/r/base/nrow.html) such as a `BEDMatrix`.
-  Missing genotypes are mean-imputed within each variant and each
-  population.
+  Missing genotypes are filled according to `impute`.
 
 - D:
 
@@ -75,6 +75,12 @@ heart_assoc(
   Density ratio \\c_i = P(D=1 \| S_i, Z_i) / P(D=1)\\ for every
   individual, required for `aux = "dr"`; see
   [`heart_density_ratio()`](https://haoyu-yang001.github.io/HEART/reference/heart_density_ratio.md).
+
+- impute:
+
+  How to fill missing genotypes: `"zero"` (set to 0, as in the original
+  HEART analysis code) or `"mean"` (variant mean within each
+  population).
 
 - block_size:
 
