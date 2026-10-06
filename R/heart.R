@@ -23,10 +23,10 @@
 #' @export
 heart <- function(Y, G, D, X = NULL, aux = "pooled",
                   family = c("gaussian", "binomial"),
-                  Y_hat = NULL, c_i = NULL, alpha = 0.05,
-                  block_size = NULL, verbose = FALSE, ...) {
+                  Y_hat = NULL, c_i = NULL, impute = c("zero", "mean"),
+                  alpha = 0.05, block_size = NULL, verbose = FALSE, ...) {
   fit <- heart_assoc(Y = Y, G = G, D = D, X = X, aux = aux, family = family,
-                     Y_hat = Y_hat, c_i = c_i, block_size = block_size,
+                     Y_hat = Y_hat, c_i = c_i, impute = impute, block_size = block_size,
                      verbose = verbose)
   a <- attr(fit, "aux")[1]
   res <- heart_test(fit$p_tar, fit[[paste0("p_de_", a)]], alpha = alpha,

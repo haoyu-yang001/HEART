@@ -33,8 +33,7 @@
 #' @param Y Numeric phenotype vector of length n (0/1 for `family = "binomial"`).
 #' @param G Genotype matrix (n x J), a numeric vector (one variant), or any
 #'   object supporting `G[, j, drop = FALSE]` and `ncol()` such as a
-#'   `BEDMatrix`. Missing genotypes are mean-imputed within each variant and
-#'   each population.
+#'   `BEDMatrix`. Missing genotypes are filled according to `impute`.
 #' @param D Population indicator of length n: 1 = target, 0 = source.
 #' @param X Optional covariates to adjust for (matrix or data.frame, n rows);
 #'   an intercept is always added. For multi-ancestry data include genetic
@@ -48,6 +47,9 @@
 #'   used here (e.g. a separate split), using surrogates only.
 #' @param c_i Density ratio \eqn{c_i = P(D=1 | S_i, Z_i) / P(D=1)} for every
 #'   individual, required for `aux = "dr"`; see [heart_density_ratio()].
+#' @param impute How to fill missing genotypes: `"zero"` (set to 0, as in the
+#'   original HEART analysis code) or `"mean"` (variant mean within each
+#'   population).
 #' @param block_size Number of variants processed together (Gaussian family).
 #'   Defaults to a value that keeps each block below roughly 150 MB.
 #' @param verbose Print progress.
@@ -74,9 +76,10 @@
 heart_assoc <- function(Y, G, D, X = NULL,
                         aux = "pooled",
                         family = c("gaussian", "binomial"),
-                        Y_hat = NULL, c_i = NULL,
+                        Y_hat = NULL, c_i = NULL, impute = c("zero", "mean"),
                         block_size = NULL, verbose = FALSE) {
   family <- match.arg(family)
+  impute <- match.arg(impute)
   aux <- unique(match.arg(aux, c("pooled", "dr", "source"), several.ok = TRUE))
 
   Y <- as.numeric(Y)
@@ -124,14 +127,14 @@ heart_assoc <- function(Y, G, D, X = NULL,
     res <- vector("list", length(starts))
     for (k in seq_along(starts)) {
       idx <- starts[k]:min(J, starts[k] + block_size - 1L)
-      Gb <- .impute_block(G[, idx, drop = FALSE], D)
+      Gb <- .impute_block(G[, idx, drop = FALSE], D, impute)
       res[[k]] <- .assoc_gaussian_block(Gb, pre)
       if (verbose) message(sprintf("variants %d-%d of %d done", idx[1], max(idx), J))
     }
   } else {
     res <- vector("list", J)
     for (j in seq_len(J)) {
-      g <- .impute_block(G[, j, drop = FALSE], D)[, 1L]
+      g <- .impute_block(G[, j, drop = FALSE], D, impute)[, 1L]
       res[[j]] <- .assoc_binomial_one(g, pre)
       if (verbose && j %% 100L == 0L) message(sprintf("variant %d of %d done", j, J))
     }

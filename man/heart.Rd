@@ -13,6 +13,7 @@ heart(
   family = c("gaussian", "binomial"),
   Y_hat = NULL,
   c_i = NULL,
+  impute = c("zero", "mean"),
   alpha = 0.05,
   block_size = NULL,
   verbose = FALSE,
@@ -24,8 +25,7 @@ heart(
 
 \item{G}{Genotype matrix (n x J), a numeric vector (one variant), or any
 object supporting \code{G[, j, drop = FALSE]} and \code{ncol()} such as a
-\code{BEDMatrix}. Missing genotypes are mean-imputed within each variant and
-each population.}
+\code{BEDMatrix}. Missing genotypes are filled according to \code{impute}.}
 
 \item{D}{Population indicator of length n: 1 = target, 0 = source.}
 
@@ -45,6 +45,10 @@ used here (e.g. a separate split), using surrogates only.}
 
 \item{c_i}{Density ratio \eqn{c_i = P(D=1 | S_i, Z_i) / P(D=1)} for every
 individual, required for \code{aux = "dr"}; see \code{\link[=heart_density_ratio]{heart_density_ratio()}}.}
+
+\item{impute}{How to fill missing genotypes: \code{"zero"} (set to 0, as in the
+original HEART analysis code) or \code{"mean"} (variant mean within each
+population).}
 
 \item{alpha}{Nominal FDR / FWER level used for the \verb{reject_*} columns.}
 

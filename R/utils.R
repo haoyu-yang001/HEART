@@ -35,21 +35,25 @@
   X1
 }
 
-# Coerce a genotype block to a numeric matrix and mean-impute missing values
-# within each population (D = 1 / D = 0), since allele frequencies differ.
-.impute_block <- function(Gb, D) {
+# Coerce a genotype block to a numeric matrix and fill missing genotypes:
+# "zero" sets them to 0 (as in the original analysis code); "mean" uses the
+# variant mean within each population (D = 1 / D = 0).
+.impute_block <- function(Gb, D, impute = "zero") {
   Gb <- as.matrix(Gb)
   storage.mode(Gb) <- "double"
-  if (anyNA(Gb)) {
-    for (grp in list(D == 1, D == 0)) {
-      sub <- Gb[grp, , drop = FALSE]
-      if (!anyNA(sub)) next
-      mu <- colMeans(sub, na.rm = TRUE)
-      mu[!is.finite(mu)] <- 0
-      idx <- which(is.na(sub), arr.ind = TRUE)
-      sub[idx] <- mu[idx[, 2L]]
-      Gb[grp, ] <- sub
-    }
+  if (!anyNA(Gb)) return(Gb)
+  if (impute == "zero") {
+    Gb[is.na(Gb)] <- 0
+    return(Gb)
+  }
+  for (grp in list(D == 1, D == 0)) {
+    sub <- Gb[grp, , drop = FALSE]
+    if (!anyNA(sub)) next
+    mu <- colMeans(sub, na.rm = TRUE)
+    mu[!is.finite(mu)] <- 0
+    idx <- which(is.na(sub), arr.ind = TRUE)
+    sub[idx] <- mu[idx[, 2L]]
+    Gb[grp, ] <- sub
   }
   Gb
 }
