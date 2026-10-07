@@ -109,3 +109,18 @@ test_that("F01 follows (Q - pi00 F00) / (pi01 + pi11)", {
   par2 <- par[setdiff(names(par), "pi11")]
   expect_equal(heart_null_cdf(lt, pd, par2, exact = TRUE), nc)
 })
+
+test_that("F00 is accurate when alpha2 is at its upper bound (uninformative p_de)", {
+  par <- list(pi00 = 1, pi01 = 0, pi10 = 0, pi11 = 0,
+              alpha1 = 0.3, alpha2 = 1 - 1e-5, C1 = 0.5, C2 = 0.1)
+  cst <- HEART:::.heart_consts(par)
+  # with alpha2 -> 1, k1 q^(1 - alpha2) ~ k1 for all but astronomically small q,
+  # so F00(t) ~ (t / k1)^(1 / (1 - alpha1))
+  for (lt in c(-30, -5, 0)) {
+    approx <- min(1, exp(cst$a * (lt - cst$logk1)))
+    expect_equal(HEART:::.F00_one(lt, cst), approx, tolerance = 1e-3)
+  }
+  set.seed(1)
+  res <- heart_test(stats::runif(3000), stats::runif(3000), par = par)
+  expect_gt(min(res$results$p_heart), 1e-6)
+})

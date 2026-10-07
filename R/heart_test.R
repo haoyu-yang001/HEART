@@ -183,33 +183,55 @@ heart_statistic <- function(p_tar, p_de, par, log = FALSE) {
 }
 
 # F00(t) = int_0^1 G_t(q) dq for a single log t (exact, adaptive quadrature).
+# G_t(q) = 1 for q <= q0 and t^a (k1 q^b + k2)^(-a) beyond, so
+# F00 = q0 + int_{log q0}^0 exp{s + a log t - a log(k1 e^(b s) + k2)} ds.
+# Integrating over s = log q keeps the integrand a smooth combination of
+# exponentials for every (alpha1, alpha2), including alpha2 close to 1.
 .F00_one <- function(logt, cst) {
-  a <- cst$a; k <- 1 / cst$b
+  a <- cst$a; b <- cst$b
   if (!is.finite(cst$logk1)) {                       # pi00 = 0: G_t constant in q
     return(min(1, exp(a * (logt - cst$logk2))))
   }
-  # u = q^b; G_t = 1 on {k1 u + k2 <= t}, i.e. u <= u* = (t - k2) / k1.
   if (is.finite(cst$logk2) && logt <= cst$logk2) {
-    s0 <- -Inf; mass0 <- 0
+    s0 <- -Inf
   } else {
-    log_ustar <- logt + log1p(-exp(cst$logk2 - logt)) - cst$logk1
+    log_ustar <- logt + log1p(-exp(cst$logk2 - logt)) - cst$logk1   # log(q0^b)
     if (log_ustar >= 0) return(1)
-    s0 <- log_ustar
-    mass0 <- exp(k * log_ustar)
+    s0 <- log_ustar / b
   }
-  # integrate t^a (k1 e^s + k2)^(-a) k e^(k s) over s in (s0, 0)
-  logf <- function(s) a * logt - a * .log_add_exp(cst$logk1 + s, cst$logk2) + log(k) + k * s
+  mass0 <- if (is.finite(s0)) exp(s0) else 0
+  if (s0 >= 0) return(1)
+  logf <- function(s) s + a * logt - a * .log_add_exp(cst$logk1 + b * s, cst$logk2)
+  # logf is concave in s, so {s: logf(s) >= M - 60} is an interval around the
+  # maximiser; outside it the integrand is negligible (relative size < e^-60).
   cand <- c(0, if (is.finite(s0)) s0)
-  if (a > k && is.finite(cst$logk2)) {
-    sc <- log(k) + cst$logk2 - log(a - k) - cst$logk1
+  ab <- a * b
+  if (ab > 1 && is.finite(cst$logk2)) {
+    sc <- (cst$logk2 - cst$logk1 - log(ab - 1)) / b
     if (sc > s0 && sc < 0) cand <- c(cand, sc)
   }
-  M <- max(logf(cand))
+  lf <- logf(cand)
+  smax <- cand[which.max(lf)]
+  M <- max(lf)
+  cut <- M - 60
+  g <- function(s) logf(s) - cut
+  lo <- if (is.finite(s0) && g(s0) >= 0) s0 else {
+    left <- if (is.finite(s0)) s0 else smax - 1
+    step <- 1
+    while (!is.finite(s0) && g(left) > 0) { step <- step * 2; left <- smax - step }
+    stats::uniroot(g, c(left, smax), tol = 1e-10)$root
+  }
+  hi <- if (g(0) >= 0) 0 else stats::uniroot(g, c(smax, 0), tol = 1e-10)$root
   f <- function(s) exp(logf(s) - M)
-  val <- tryCatch(
-    stats::integrate(f, s0, 0, rel.tol = 1e-10, abs.tol = 0, subdivisions = 2000L)$value,
-    error = function(e) stats::integrate(f, s0, 0, subdivisions = 2000L)$value
-  )
+  pieces <- unique(c(lo, smax, hi))
+  val <- 0
+  for (i in seq_len(length(pieces) - 1L)) {
+    l <- pieces[i]; h <- pieces[i + 1L]
+    if (h <= l) next
+    val <- val + tryCatch(
+      stats::integrate(f, l, h, rel.tol = 1e-10, abs.tol = 0, subdivisions = 2000L)$value,
+      error = function(e) stats::integrate(f, l, h, subdivisions = 2000L)$value)
+  }
   min(1, mass0 + exp(M) * val)
 }
 
