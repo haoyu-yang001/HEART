@@ -4,11 +4,12 @@ Evaluates, at the statistic values `t`, the global-null CDF \\F\_{00}(t)
 = \int_0^1 G_t(q)dq\\, its empirical counterpart \\\hat Q(t) =
 J^{-1}\sum_j G_t(p\_{de,j})\\, the reconstructed \\\hat F\_{01}(t) =
 \\\hat Q(t) - \hat\pi\_{00}F\_{00}(t)\\/(\hat\pi\_{01}+\hat\pi\_{11})\\
-(truncated to \[0, 1\]; set to 0 if \\\hat\pi\_{01}+\hat\pi\_{11} =
-0\\), the null numerator \\\hat N(t) = \hat\pi\_{00}F\_{00}(t) +
-\hat\pi\_{01}\hat F\_{01}(t)\\ and the composite null CDF \\\hat F_0(t)
-= \hat N(t) / (\hat\pi\_{00} + \hat\pi\_{01})\\, where \\G_t(q) =
-\min\\1, (t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\\\\.
+(truncated to \[0, 1\] and made nondecreasing in \\t\\ by a running
+maximum; set to 0 if \\\hat\pi\_{01}+\hat\pi\_{11} = 0\\), the null
+numerator \\\hat N(t) = \hat\pi\_{00}F\_{00}(t) + \hat\pi\_{01}\hat
+F\_{01}(t)\\ and the composite null CDF \\\hat F_0(t) = \hat N(t) /
+(\hat\pi\_{00} + \hat\pi\_{01})\\, where \\G_t(q) = \min\\1,
+(t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\\\\.
 
 ## Usage
 
