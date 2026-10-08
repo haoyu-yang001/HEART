@@ -28,7 +28,8 @@ Evaluates, at the statistic values \code{t}, the global-null CDF
 \eqn{F_{00}(t) = \int_0^1 G_t(q)dq}, its empirical counterpart
 \eqn{\hat Q(t) = J^{-1}\sum_j G_t(p_{de,j})}, the reconstructed
 \eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{00}F_{00}(t)\}/(\hat\pi_{01}+\hat\pi_{11})}
-(truncated to [0, 1]; set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
+(truncated to [0, 1] and made nondecreasing in \eqn{t} by a running maximum;
+set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
 \eqn{\hat N(t) = \hat\pi_{00}F_{00}(t) + \hat\pi_{01}\hat F_{01}(t)} and the
 composite null CDF \eqn{\hat F_0(t) = \hat N(t) / (\hat\pi_{00} + \hat\pi_{01})},
 where \eqn{G_t(q) = \min\{1, (t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\}}.

@@ -276,7 +276,8 @@ heart_statistic <- function(p_tar, p_de, par, log = FALSE) {
 #' \eqn{F_{00}(t) = \int_0^1 G_t(q)dq}, its empirical counterpart
 #' \eqn{\hat Q(t) = J^{-1}\sum_j G_t(p_{de,j})}, the reconstructed
 #' \eqn{\hat F_{01}(t) = \{\hat Q(t) - \hat\pi_{00}F_{00}(t)\}/(\hat\pi_{01}+\hat\pi_{11})}
-#' (truncated to \[0, 1\]; set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
+#' (truncated to \[0, 1\] and made nondecreasing in \eqn{t} by a running maximum;
+#' set to 0 if \eqn{\hat\pi_{01}+\hat\pi_{11} = 0}), the null numerator
 #' \eqn{\hat N(t) = \hat\pi_{00}F_{00}(t) + \hat\pi_{01}\hat F_{01}(t)} and the
 #' composite null CDF \eqn{\hat F_0(t) = \hat N(t) / (\hat\pi_{00} + \hat\pi_{01})},
 #' where \eqn{G_t(q) = \min\{1, (t/(\kappa_1 q^{1-\alpha_2} + \kappa_2))^{1/(1-\alpha_1)}\}}.
@@ -300,7 +301,7 @@ heart_null_cdf <- function(log_t, p_de, par, exact = FALSE,
   Q <- .Q_hat(lt, p_de, cst)
   pi11 <- if (!is.null(par$pi11)) par$pi11 else max(0, 1 - par$pi00 - par$pi01 - par$pi10)
   den <- par$pi01 + pi11
-  F01 <- if (den <= 0) rep(0, length(lt)) else pmin(pmax((Q - par$pi00 * F00) / den, 0), 1)
+  F01 <- if (den <= 0) rep(0, length(lt)) else cummax(pmin(pmax((Q - par$pi00 * F00) / den, 0), 1))
   N <- par$pi00 * F00 + par$pi01 * F01
   F0 <- pmin(1, N / (par$pi00 + par$pi01))
   data.frame(log_t = lt, F00 = F00, Q = Q, F01 = F01, N = N, F0 = F0)
